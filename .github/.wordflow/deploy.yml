@@ -1,0 +1,53 @@
+# .github/workflows/deploy.yml
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # Or your default branch, e.g., master
+  workflow_dispatch: # Allows manual triggering
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20" # Specify your Node.js version
+          cache: "npm" # Or 'yarn' or 'pnpm'
+
+      - name: Install dependencies
+        run: npm install # Or 'yarn install' or 'pnpm install'
+
+      # Crucial: Configure Next.js for GitHub Pages
+      # This step assumes you have set 'output: "export"' and
+      # the correct 'basePath' and 'assetPrefix' in your next.config.js or next.config.mjs
+      # For example, basePath: "/YOUR_REPOSITORY_NAME"
+      - name: Build Next.js app
+        run: npm run build # Or your specific build command that generates the 'out' folder
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out # Next.js static export default output directory
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
